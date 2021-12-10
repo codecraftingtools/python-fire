@@ -227,7 +227,7 @@ def _IsHelpShortcut(component_trace, remaining_args):
       component = component_trace.GetResult()
       if inspect.isclass(component) or inspect.isroutine(component):
         fn_spec = inspectutils.GetFullArgSpec(component)
-        _, remaining_kwargs, _ = _ParseKeywordArgs(remaining_args, fn_spec)
+        _, remaining_kwargs, _, _, _ = _ParseKeywordArgs(remaining_args, fn_spec) #jeffmod
         show_help = target in remaining_kwargs
       else:
         members = dict(inspect.getmembers(component))
@@ -714,8 +714,10 @@ def _MakeParseFn(fn, metadata):
 
   def _ParseFn(args):
     """Parses the list of `args` into (varargs, kwargs), remaining_args."""
-    kwargs, remaining_kwargs, remaining_args = _ParseKeywordArgs(args, fn_spec)
-
+    enumerated_args = enumerate(args) # jeff
+    kwargs, remaining_kwargs, remaining_args, remaining_kwargs_indices, remaining_args_indices = _ParseKeywordArgs(args, fn_spec) # jeffmod
+    len_remaining_args_before = len(remaining_args) #jeff
+    
     # Note: _ParseArgs modifies kwargs.
     parsed_args, kwargs, remaining_args, capacity = _ParseArgs(
         fn_spec.args, fn_spec.defaults, num_required_args, kwargs,
@@ -743,7 +745,18 @@ def _MakeParseFn(fn, metadata):
       varargs[index] = _ParseValue(value, None, None, metadata)
 
     varargs = parsed_args + varargs
-    remaining_args += remaining_kwargs
+    
+    #jeff
+    n_to_remove = len_remaining_args_before - len(remaining_args)
+    for i in range(n_to_remove):
+      remaining_args_indices.pop(0)
+    enumerated_remaining_args = list(zip(remaining_args_indices, remaining_args))
+    enumerated_remaining_kwargs = list(zip(remaining_kwargs_indices, remaining_kwargs))
+    enumerated_remaining_args = enumerated_remaining_args + enumerated_remaining_kwargs
+    enumerated_remaining_args.sort(key=lambda a: a[0])
+    remaining_args = [a for i, a in enumerated_remaining_args]
+    #jeff
+    # jeffmod # remaining_args += remaining_kwargs
 
     consumed_args = args[:len(args) - len(remaining_args)]
     return (varargs, kwargs), consumed_args, remaining_args, capacity
@@ -836,21 +849,36 @@ def _ParseKeywordArgs(args, fn_spec):
   """
   kwargs = {}
   remaining_kwargs = []
+  remaining_kwargs_indices = [] # jeff
   remaining_args = []
+  remaining_args_indices = [] # jeff
   fn_keywords = fn_spec.varkw
   fn_args = fn_spec.args + fn_spec.kwonlyargs
 
   if not args:
-    return kwargs, remaining_kwargs, remaining_args
+    return kwargs, remaining_kwargs, remaining_args, remaining_kwargs_indices, remaining_args_indices # jeffmod
 
   skip_argument = False
 
+  # jeff
+  done_with_args = False
+  n_args = 0 if fn_spec.args is None else len(fn_spec.args)
+  n_arg_defaults = 0 if fn_spec.defaults is None else len(fn_spec.defaults)
+  n_pos_args = n_args - n_arg_defaults
+  if fn_spec.args is None:
+    pos_args_without_defaults = []
+  else:
+    pos_args_without_defaults = []
+    for i in range(n_pos_args):
+      pos_args_without_defaults.append(fn_spec.args[i])
+  #jeff
+  
   for index, argument in enumerate(args):
     if skip_argument:
       skip_argument = False
       continue
 
-    if _IsFlag(argument):
+    if _IsFlag(argument) and (not done_with_args): #jeffmod
       # This is a named argument. We get its value from this arg or the next.
 
       # Terminology:
@@ -918,14 +946,25 @@ def _ParseKeywordArgs(args, fn_spec):
       skip_argument = not contains_equals and not is_bool_syntax
       if got_argument:
         kwargs[keyword] = value
+        # jeff
+        if keyword in pos_args_without_defaults:
+          pos_args_without_defaults.remove(keyword)
+        #jeff
       else:
         remaining_kwargs.append(argument)
+        remaining_kwargs_indices.append(index) # jeff
         if skip_argument:
           remaining_kwargs.append(args[index + 1])
+          remaining_kwargs_indices.append(index + 1) # jeff
     else:  # not _IsFlag(argument)
+      #jeff
+      if (fn_spec.varargs is None) and (len(remaining_args) >= len(pos_args_without_defaults)): # one more detected
+        done_with_args = True
+      # jeff
       remaining_args.append(argument)
+      remaining_args_indices.append(index)
 
-  return kwargs, remaining_kwargs, remaining_args
+  return kwargs, remaining_kwargs, remaining_args, remaining_kwargs_indices, remaining_args_indices # jeffmod
 
 
 def _IsFlag(argument):
