@@ -79,6 +79,14 @@ def SetParseFns(*positional, **named):
   return _Decorator
 
 
+def SetDefaultsDict(defaults_dict):
+  def _Decorator(fn):
+    _SetMetadata(fn, FIRE_DEFAULTS_DICT, defaults_dict)
+    return fn
+
+  return _Decorator
+
+
 def _SetMetadata(fn, attribute, value):
   metadata = GetMetadata(fn)
   metadata[attribute] = value
