@@ -705,7 +705,7 @@ def _MakeParseFn(fn, metadata):
     can then be called with fn(*varargs, **kwargs). The remaining_args are
     the leftover args from the arguments to the parse function.
   """
-  fn_spec = inspectutils.GetFullArgSpec(fn)
+  fn_spec = inspectutils.GetFullArgSpec(fn, metadata)
 
   # Note: num_required_args is the number of positional arguments without
   # default values. All of these arguments are required.

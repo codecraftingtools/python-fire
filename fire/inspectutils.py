@@ -22,6 +22,7 @@ import inspect
 import sys
 import types
 
+from fire import decorators
 from fire import docstrings
 
 import six
@@ -231,7 +232,22 @@ def GetFullArgSpec(fn):
   return FullArgSpec(args, varargs, varkw, defaults,
                      kwonlyargs, kwonlydefaults, annotations)
 
-
+_GetFullArgSpecOrig = GetFullArgSpec
+def GetFullArgSpec(fn, metadata=None):
+  a = _GetFullArgSpecOrig(fn)
+  if metadata is None:
+    metadata = decorators.GetMetadata(fn)
+  if metadata:
+    default_overrides = metadata.get(decorators.FIRE_DEFAULTS_DICT)
+    if default_overrides:
+      new_defaults = []
+      for arg, default in zip(reversed(a.args), reversed(a.defaults)):
+        if arg in default_overrides:
+          default = default_overrides[arg]
+        new_defaults.append(default)
+      a.defaults = list(reversed(new_defaults))
+  return a
+  
 def GetFileAndLine(component):
   """Returns the filename and line number of component.
 
