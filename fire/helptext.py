@@ -524,6 +524,9 @@ def _GetArgDefault(flag, spec):
   for arg, default in zip(args_with_defaults, spec.defaults):
     if arg == flag:
       return repr(default)
+  for arg, default in spec.kwonlydefaults.items():
+    if arg == flag:
+      return repr(default)
   return ''
 
 

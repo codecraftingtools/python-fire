@@ -246,6 +246,9 @@ def GetFullArgSpec(fn, metadata=None):
           default = default_overrides[arg]
         new_defaults.append(default)
       a.defaults = list(reversed(new_defaults))
+      for arg in list(a.kwonlydefaults.keys()):
+        if arg in default_overrides:
+          a.kwonlydefaults[arg] = default_overrides[arg]
   return a
   
 def GetFileAndLine(component):
