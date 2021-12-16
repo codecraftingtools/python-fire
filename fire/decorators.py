@@ -88,6 +88,15 @@ def SetDefaultsDict(defaults_dict):
   return _Decorator
 
 
+def SetStandIn(stand_in):
+  def _Decorator(fn):
+    _SetMetadata(fn, FIRE_STAND_IN, stand_in)
+    metadata = GetMetadata(fn)
+    return fn
+
+  return _Decorator
+
+
 def _SetMetadata(fn, attribute, value):
   metadata = GetMetadata(fn)
   metadata[attribute] = value
