@@ -250,7 +250,9 @@ def _PrintResult(component_trace, verbose=False):
   if value_types.HasCustomStr(result):
     # If the object has a custom __str__ method, rather than one inherited from
     # object, then we use that to serialize the object.
-    print(str(result))
+    result_str = str(result)
+    if result_str:
+      print(result_str)
     return
 
   if isinstance(result, (list, set, frozenset, types.GeneratorType)):
