@@ -181,10 +181,21 @@ def Py3GetFullArgSpec(fn):
   # pytype: enable=module-attr
 
 
-def GetFullArgSpec(fn):
+def _GetStandIn(fn, metadata=None):
+  if metadata is None:
+    metadata = decorators.GetMetadata(fn)
+  if metadata:
+    stand_in_fn = metadata.get(decorators.FIRE_STAND_IN)
+    if stand_in_fn:
+      fn = stand_in_fn
+  return fn
+
+def GetFullArgSpec(fn, metadata):
   """Returns a FullArgSpec describing the given callable."""
   original_fn = fn
   fn, skip_arg = _GetArgSpecInfo(fn)
+  
+  fn = _GetStandIn(fn, metadata)
 
   try:
     if sys.version_info[0:2] >= (3, 5):
@@ -234,7 +245,7 @@ def GetFullArgSpec(fn):
 
 _GetFullArgSpecOrig = GetFullArgSpec
 def GetFullArgSpec(fn, metadata=None):
-  a = _GetFullArgSpecOrig(fn)
+  a = _GetFullArgSpecOrig(fn, metadata)
   if metadata is None:
     metadata = decorators.GetMetadata(fn)
   if metadata:
