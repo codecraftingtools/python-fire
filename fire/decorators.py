@@ -109,6 +109,10 @@ def GetMetadata(fn):
   }
   try:
     metadata = getattr(fn, FIRE_METADATA, default)
+    if hasattr(fn, "__class__"):
+      class_metadata = getattr(fn.__class__, FIRE_METADATA, default)
+      if metadata is class_metadata:
+        metadata = default
     if ACCEPTS_POSITIONAL_ARGS in metadata:
       return metadata
     else:
