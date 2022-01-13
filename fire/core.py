@@ -898,6 +898,7 @@ def _ParseKeywordArgs(args, fn_spec):
       else:
         key = stripped_argument
 
+      key_with_dashes = key
       key = key.replace('-', '_')
       is_bool_syntax = (not contains_equals and
                         (index + 1 == len(args) or _IsFlag(args[index + 1])))
@@ -905,9 +906,13 @@ def _ParseKeywordArgs(args, fn_spec):
       # Determine the keyword.
       keyword = ''  # Indicates no valid keyword has been found yet.
       if (key in fn_args
+          or (is_bool_syntax and key_with_dashes.startswith('no-') and
+              key[3:] in fn_args)
           or (is_bool_syntax and key.startswith('no') and key[2:] in fn_args)
           or fn_keywords):
         keyword = key
+        if is_bool_syntax and key_with_dashes.startswith('no-'):
+          keyword = keyword.replace('_', '-', 1)
       elif len(key) == 1:
         # This may be a shortcut flag.
         matching_fn_args = [arg for arg in fn_args if arg[0] == key]
@@ -930,6 +935,9 @@ def _ParseKeywordArgs(args, fn_spec):
         got_argument = True
         if keyword in fn_args:
           value = 'True'
+        elif keyword.startswith('no-'):
+          keyword = keyword[3:]
+          value = 'False'
         elif keyword.startswith('no'):
           keyword = keyword[2:]
           value = 'False'
