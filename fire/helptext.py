@@ -35,6 +35,7 @@ from __future__ import print_function
 
 import itertools
 import sys
+import typing
 
 from fire import completion
 from fire import custom_descriptions
@@ -410,8 +411,9 @@ def _CreateArgItem(arg, docstring_info, spec):
 
   arg_string = formatting.BoldUnderline(arg.upper())
 
+  type_label = 'Choices' if _IsLiteral(arg, spec) else 'Type'
   arg_type = _GetArgType(arg, spec)
-  arg_type = 'Type: {}'.format(arg_type) if arg_type else ''
+  arg_type = '{}: {}'.format(type_label, arg_type) if arg_type else ''
   available_space = max_str_length - len(arg_type)
   arg_type = (
       formatting.EllipsisTruncate(arg_type, available_space, max_str_length))
@@ -456,6 +458,7 @@ def _CreateFlagItem(flag, docstring_info, spec, required=False,
   if required:
     flag_string += ' (required)'
 
+  type_label = 'Choices' if _IsLiteral(flag, spec) else 'Type'
   arg_type = _GetArgType(flag, spec)
   arg_default = _GetArgDefault(flag, spec)
 
@@ -464,7 +467,7 @@ def _CreateFlagItem(flag, docstring_info, spec, required=False,
   if arg_default == 'None':
     arg_type = 'Optional[{}]'.format(arg_type)
 
-  arg_type = 'Type: {}'.format(arg_type) if arg_type else ''
+  arg_type = '{}: {}'.format(type_label, arg_type) if arg_type else ''
   available_space = max_str_length - len(arg_type)
   arg_type = (
       formatting.EllipsisTruncate(arg_type, available_space, max_str_length))
@@ -481,6 +484,13 @@ def _CreateFlagItem(flag, docstring_info, spec, required=False,
   return _CreateItem(flag_string, description, indent=SUBSECTION_INDENTATION)
 
 
+def _IsLiteral(arg, spec):
+  if arg in spec.annotations:
+    arg_type = spec.annotations[arg]
+    if repr(arg_type).startswith("typing.Literal"):
+      return True
+  return False
+  
 def _GetArgType(arg, spec):
   """Returns a string describing the type of an argument.
 
@@ -496,6 +506,9 @@ def _GetArgType(arg, spec):
     arg_type = spec.annotations[arg]
     try:
       if sys.version_info[0:2] >= (3, 3):
+        if repr(arg_type).startswith("typing.Literal"):
+          literals = typing.get_args(arg_type)
+          return " | ".join("'{}'".format(x) for x in literals)
         return arg_type.__qualname__
       return arg_type.__name__
     except AttributeError:
