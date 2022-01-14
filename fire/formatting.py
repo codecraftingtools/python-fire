@@ -72,6 +72,7 @@ def Error(text):
 
 
 def EllipsisTruncate(text, available_space, line_length):
+  return text
   """Truncate text from the end with ellipsis."""
   if available_space < len(ELLIPSIS):
     available_space = line_length
