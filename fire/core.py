@@ -944,6 +944,11 @@ def _ParseKeywordArgs(args, fn_spec):
           value = 'False'
         else:
           value = 'True'
+        if keyword and not (keyword in fn_spec.annotations and
+                             fn_spec.annotations[keyword] == bool):
+          raise FireError(
+            "Boolean syntax was used for non-boolean argument " +
+            f"'{keyword}'")
       else:
         # The assert should pass. Otherwise either contains_equals or
         # is_bool_syntax would have been True.
