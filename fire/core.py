@@ -227,7 +227,10 @@ def _IsHelpShortcut(component_trace, remaining_args):
       component = component_trace.GetResult()
       if inspect.isclass(component) or inspect.isroutine(component):
         fn_spec = inspectutils.GetFullArgSpec(component)
-        _, remaining_kwargs, _, _, _ = _ParseKeywordArgs(remaining_args, fn_spec) #jeffmod
+        try:
+          _, remaining_kwargs, _, _, _ = _ParseKeywordArgs(remaining_args, fn_spec) #jeffmod
+        except:
+          return False
         show_help = target in remaining_kwargs
       else:
         members = dict(inspect.getmembers(component))
