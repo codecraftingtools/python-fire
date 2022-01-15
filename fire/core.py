@@ -805,7 +805,7 @@ def _ParseArgs(fn_args, fn_defaults, num_required_args, kwargs,
       value = _ParseValue(value, index, arg, metadata)
       parsed_args.append(value)
     else:  # No value has been explicitly specified.
-      if remaining_args and accepts_positional_args:
+      if remaining_args and accepts_positional_args and (index < num_required_args):
         # Use a positional arg.
         value = remaining_args.pop(0)
         value = _ParseValue(value, index, arg, metadata)
