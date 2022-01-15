@@ -34,11 +34,13 @@ def IsGroup(component):
 
 
 def IsCommand(component):
+  if hasattr(component, "__post_call__") and not hasattr(component, "_empty_call"):
+    return True
   return inspect.isroutine(component) or inspect.isclass(component)
 
 
 def IsValue(component):
-  return isinstance(component, VALUE_TYPES) or HasCustomStr(component)
+  return isinstance(component, VALUE_TYPES) #or HasCustomStr(component)
 
 
 def IsSimpleGroup(component):
