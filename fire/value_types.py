@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import inspect
 
+from fire import decorators
 from fire import inspectutils
 import six
 
@@ -34,13 +35,25 @@ def IsGroup(component):
 
 
 def IsCommand(component):
-  if hasattr(component, "__post_call__") and not hasattr(component, "_empty_call"):
+  metadata = decorators.GetMetadata(component)
+  vt = metadata.get(decorators.FIRE_VALUE_TYPE, None)
+  if vt is None and hasattr(component, "__class__"):
+    metadata = decorators.GetMetadata(component.__class__)
+    vt = metadata.get(decorators.FIRE_VALUE_TYPE, None)
+  if vt == "command":
     return True
   return inspect.isroutine(component) or inspect.isclass(component)
 
 
 def IsValue(component):
-  return isinstance(component, VALUE_TYPES) #or HasCustomStr(component)
+  metadata = decorators.GetMetadata(component)
+  vt = metadata.get(decorators.FIRE_VALUE_TYPE, None)
+  if vt is None and hasattr(component, "__class__"):
+    metadata = decorators.GetMetadata(component.__class__)
+    vt = metadata.get(decorators.FIRE_VALUE_TYPE, None)
+  if vt is not None:
+    return False
+  return isinstance(component, VALUE_TYPES) or HasCustomStr(component)
 
 
 def IsSimpleGroup(component):
